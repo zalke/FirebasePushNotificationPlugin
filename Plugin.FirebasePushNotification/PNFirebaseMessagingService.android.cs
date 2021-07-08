@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Android.App;
 using Android.Content;
@@ -27,7 +28,7 @@ namespace Plugin.FirebasePushNotification
                 }
 
                 var bodyLocArgs = notification.GetBodyLocalizationArgs();
-                if (bodyLocArgs != null && bodyLocArgs.Any())
+                if (bodyLocArgs?.Any() == true)
                 {
                     parameters.Add("body_loc_args", bodyLocArgs);
                 }
@@ -43,7 +44,7 @@ namespace Plugin.FirebasePushNotification
                 }
 
                 var titleLocArgs = notification.GetTitleLocalizationArgs();
-                if (titleLocArgs != null && titleLocArgs.Any())
+                if (titleLocArgs?.Any() == true)
                 {
                     parameters.Add("title_loc_args", titleLocArgs);
                 }
@@ -94,13 +95,12 @@ namespace Plugin.FirebasePushNotification
                 {
                     if (parameterValue.StartsWith("[") && parameterValue.EndsWith("]") && parameterValue.Length > 2)
                     {
-
-                        var arrayValues = parameterValue.Substring(1, parameterValue.Length - 2);
+                        var arrayValues = parameterValue[1..^1];
                         parameters[locKey] = arrayValues.Split(',').Select(t => t.Trim()).ToArray();
                     }
                     else
                     {
-                        parameters[locKey] = new string[] { };
+                        parameters[locKey] = Array.Empty<string>();
                     }
                 }
             }
@@ -141,7 +141,5 @@ namespace Plugin.FirebasePushNotification
         dispatcher.schedule(myJob);*/
             // [END dispatch_job]
         }
-
     }
-
 }

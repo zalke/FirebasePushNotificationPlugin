@@ -1,29 +1,26 @@
-using System;
-using Firebase.Iid;
-using Firebase.Messaging;
-using System.Collections.Generic;
+﻿using Android.App;
 using Android.Content;
-using Android.OS;
-using System.Collections.ObjectModel;
-using System.Linq;
-using Android.Gms.Tasks;
-using System.Threading;
-using Android.App;
 using Android.Content.PM;
+using Android.Gms.Tasks;
 using Android.Graphics;
 using Android.Media;
+using Android.OS;
+using Firebase.Messaging;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using Java.Interop;
 
 namespace Plugin.FirebasePushNotification
 {
     /// <summary>
     /// Implementation for Feature
     /// </summary>
-    public class FirebasePushNotificationManager : Java.Lang.Object, IFirebasePushNotification, IOnCompleteListener
+    public class FirebasePushNotificationManager : Java.Lang.Object, IFirebasePushNotification
     {
         private static NotificationResponse delayedNotificationResponse = null;
-        private static TaskCompletionSource<string> _tokenTcs;
         internal const string KeyGroupName = "Plugin.FirebasePushNotification";
         internal const string FirebaseTopicsKey = "FirebaseTopicsKey";
         internal const string FirebaseTokenKey = "FirebaseTokenKey";
@@ -32,8 +29,8 @@ namespace Plugin.FirebasePushNotification
         internal const string AppVersionPackageNameKey = "AppVersionPackageNameKey";
 
         // internal const string NotificationDeletedActionId = "Plugin.PushNotification.NotificationDeletedActionId";
-        private static ICollection<string> currentTopics = new HashSet<string>(Android.App.Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).GetStringSet(FirebaseTopicsKey, new Collection<string>()));
-        private static IList<NotificationUserCategory> userNotificationCategories = new List<NotificationUserCategory>();
+        private static readonly ICollection<string> currentTopics = new HashSet<string>(Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).GetStringSet(FirebaseTopicsKey, new Collection<string>()));
+        private static readonly IList<NotificationUserCategory> userNotificationCategories = new List<NotificationUserCategory>();
         public static string NotificationContentTitleKey { get; set; }
         public static string NotificationContentTextKey { get; set; }
         public static string NotificationContentDataKey { get; set; }
@@ -57,7 +54,7 @@ namespace Plugin.FirebasePushNotification
         {
             DefaultNotificationActivityType = activity.GetType();
             var extras = intent?.Extras;
-            if (extras != null && !extras.IsEmpty)
+            if (extras?.IsEmpty == false)
             {
                 var parameters = new Dictionary<string, object>();
                 foreach (var key in extras.KeySet())
@@ -85,9 +82,7 @@ namespace Plugin.FirebasePushNotification
                         }
                     }
 
-
                     var response = new NotificationResponse(parameters, extras.GetString(DefaultPushNotificationHandler.ActionIdentifierKey, string.Empty));
-
 
                     if (string.IsNullOrEmpty(response.Identifier))
                     {
@@ -97,7 +92,8 @@ namespace Plugin.FirebasePushNotification
                         }
                         else
                         {
-                            _onNotificationOpened?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationResponseEventArgs(response.Data, response.Identifier, response.Type));
+                            _onNotificationOpened?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationResponseEventArgs(response.Data, response.Identifier, response.Type, response.Result));
+                            CrossFirebasePushNotification.Current.NotificationHandler?.OnOpened(response);
                         }
                     }
                     else
@@ -108,44 +104,36 @@ namespace Plugin.FirebasePushNotification
                         }
                         else
                         {
-                            _onNotificationAction?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationResponseEventArgs(response.Data, response.Identifier, response.Type));
+                            _onNotificationAction?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationResponseEventArgs(response.Data, response.Identifier, response.Type, response.Result));
+                            CrossFirebasePushNotification.Current.NotificationHandler?.OnAction(response);
                         }
                     }
-
-
-                    CrossFirebasePushNotification.Current.NotificationHandler?.OnOpened(response);
                 }
-
             }
         }
         public static void Initialize(Context context, bool resetToken, bool createDefaultNotificationChannel = true, bool autoRegistration = true)
         {
-            CrossFirebasePushNotification.Current.NotificationHandler = CrossFirebasePushNotification.Current.NotificationHandler ?? new DefaultPushNotificationHandler();
+            CrossFirebasePushNotification.Current.NotificationHandler ??= new DefaultPushNotificationHandler();
             FirebaseMessaging.Instance.AutoInitEnabled = autoRegistration;
             if (autoRegistration)
             {
-                ThreadPool.QueueUserWorkItem(state =>
+                ThreadPool.QueueUserWorkItem(_ =>
                 {
-
                     var packageName = Application.Context.PackageManager.GetPackageInfo(Application.Context.PackageName, PackageInfoFlags.MetaData).PackageName;
-                    var versionCode = Application.Context.PackageManager.GetPackageInfo(Application.Context.PackageName, PackageInfoFlags.MetaData).VersionCode;
+                    var versionCode = Application.Context.PackageManager.GetPackageInfo(Application.Context.PackageName, PackageInfoFlags.MetaData).LongVersionCode;
                     var versionName = Application.Context.PackageManager.GetPackageInfo(Application.Context.PackageName, PackageInfoFlags.MetaData).VersionName;
-                    var prefs = Android.App.Application.Context.GetSharedPreferences(FirebasePushNotificationManager.KeyGroupName, FileCreationMode.Private);
+                    var prefs = Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private);
 
                     try
                     {
-
-                        var storedVersionName = prefs.GetString(FirebasePushNotificationManager.AppVersionNameKey, string.Empty);
-                        var storedVersionCode = prefs.GetString(FirebasePushNotificationManager.AppVersionCodeKey, string.Empty);
-                        var storedPackageName = prefs.GetString(FirebasePushNotificationManager.AppVersionPackageNameKey, string.Empty);
-
+                        var storedVersionName = prefs.GetString(AppVersionNameKey, string.Empty);
+                        var storedVersionCode = prefs.GetString(AppVersionCodeKey, string.Empty);
+                        var storedPackageName = prefs.GetString(AppVersionPackageNameKey, string.Empty);
 
                         if (resetToken || (!string.IsNullOrEmpty(storedPackageName) && (!storedPackageName.Equals(packageName, StringComparison.CurrentCultureIgnoreCase) || !storedVersionName.Equals(versionName, StringComparison.CurrentCultureIgnoreCase) || !storedVersionCode.Equals($"{versionCode}", StringComparison.CurrentCultureIgnoreCase))))
                         {
                             CleanUp(false);
-
                         }
-
                     }
                     catch (Exception ex)
                     {
@@ -154,35 +142,30 @@ namespace Plugin.FirebasePushNotification
                     finally
                     {
                         var editor = prefs.Edit();
-                        editor.PutString(FirebasePushNotificationManager.AppVersionNameKey, $"{versionName}");
-                        editor.PutString(FirebasePushNotificationManager.AppVersionCodeKey, $"{versionCode}");
-                        editor.PutString(FirebasePushNotificationManager.AppVersionPackageNameKey, $"{packageName}");
+                        editor.PutString(AppVersionNameKey, $"{versionName}");
+                        editor.PutString(AppVersionCodeKey, $"{versionCode}");
+                        editor.PutString(AppVersionPackageNameKey, $"{packageName}");
                         editor.Commit();
                     }
-
-
                     CrossFirebasePushNotification.Current.RegisterForPushNotifications();
-
-
                 });
             }
 
-
-            if (Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.O && createDefaultNotificationChannel)
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.O && createDefaultNotificationChannel)
             {
                 // Create channel to show notifications.
                 var channelId = DefaultNotificationChannelId;
                 var channelName = DefaultNotificationChannelName;
                 var notificationManager = (NotificationManager)context.GetSystemService(Context.NotificationService);
 
-                Android.Net.Uri defaultSoundUri = SoundUri != null ? SoundUri : RingtoneManager.GetDefaultUri(RingtoneType.Notification);
-                AudioAttributes attributes = new AudioAttributes.Builder()
+                var defaultSoundUri = SoundUri ?? RingtoneManager.GetDefaultUri(RingtoneType.Notification);
+                var attributes = new AudioAttributes.Builder()
                     .SetUsage(AudioUsageKind.Notification)
                     .SetContentType(AudioContentType.Sonification)
                     .SetLegacyStreamType(Stream.Notification)
                     .Build();
 
-                NotificationChannel notificationChannel = new NotificationChannel(channelId, channelName, DefaultNotificationChannelImportance);
+                var notificationChannel = new NotificationChannel(channelId, channelName, DefaultNotificationChannelImportance);
                 notificationChannel.EnableLights(true);
                 notificationChannel.SetSound(defaultSoundUri, attributes);
 
@@ -193,26 +176,19 @@ namespace Plugin.FirebasePushNotification
         }
         public static void Initialize(Context context, NotificationUserCategory[] notificationCategories, bool resetToken, bool createDefaultNotificationChannel = true, bool autoRegistration = true)
         {
-
             Initialize(context, resetToken, createDefaultNotificationChannel, autoRegistration);
             RegisterUserNotificationCategories(notificationCategories);
-
         }
         public static void Reset()
         {
             try
             {
-                ThreadPool.QueueUserWorkItem(state =>
-                {
-                    CleanUp();
-                });
+                ThreadPool.QueueUserWorkItem(_ => CleanUp());
             }
             catch (Exception ex)
             {
                 _onNotificationError?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationErrorEventArgs(FirebasePushNotificationErrorType.UnregistrationFailed, ex.ToString()));
             }
-
-
         }
         public void RegisterForPushNotifications()
         {
@@ -222,55 +198,23 @@ namespace Plugin.FirebasePushNotification
                 var token = await GetTokenAsync();
                 if (!string.IsNullOrEmpty(token))
                 {
-
                     SaveToken(token);
                 }
             });
-
         }
 
         public async Task<string> GetTokenAsync()
         {
-
-            _tokenTcs = new TaskCompletionSource<string>();
-            FirebaseInstanceId.Instance.GetInstanceId().AddOnCompleteListener(this);
-
-            string retVal = null;
-
             try
             {
-                retVal = await _tokenTcs.Task;
+                return (await FirebaseMessaging.Instance.GetToken().ToAwaitableTask()).ToString();
             }
             catch (Exception ex)
             {
                 _onNotificationError?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationErrorEventArgs(FirebasePushNotificationErrorType.RegistrationFailed, $"{ex}"));
             }
 
-            return retVal;
-
-
-        }
-
-        public void OnComplete(Android.Gms.Tasks.Task task)
-        {
-
-            try
-            {
-                if (task.IsSuccessful)
-                {
-                    var token = task.Result.JavaCast<IInstanceIdResult>().Token;
-                    _tokenTcs?.TrySetResult(token);
-                }
-                else
-                {
-                    _tokenTcs?.TrySetException(task.Exception);
-                }
-
-            }
-            catch (Exception ex)
-            {
-                _tokenTcs?.TrySetException(ex);
-            }
+            return string.Empty;
         }
 
         public void UnregisterForPushNotifications()
@@ -286,10 +230,10 @@ namespace Plugin.FirebasePushNotification
                 CrossFirebasePushNotification.Current.UnsubscribeAll();
             }
 
-            FirebaseInstanceId.Instance.DeleteInstanceId();
+            //FirebaseInstanceId.Instance.DeleteInstanceId();
+            Firebase.Installations.FirebaseInstallations.Instance.Delete();
             SaveToken(string.Empty);
         }
-
 
         public static void Initialize(Context context, IPushNotificationHandler pushNotificationHandler, bool resetToken, bool createDefaultNotificationChannel = true, bool autoRegistration = true)
         {
@@ -302,7 +246,7 @@ namespace Plugin.FirebasePushNotification
             userNotificationCategories.Clear();
         }
 
-        public string Token { get { return Android.App.Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).GetString(FirebaseTokenKey, string.Empty); } }
+        public string Token { get { return Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).GetString(FirebaseTokenKey, string.Empty); } }
 
         private static FirebasePushNotificationDataEventHandler _onNotificationReceived;
         public event FirebasePushNotificationDataEventHandler OnNotificationReceived
@@ -317,7 +261,6 @@ namespace Plugin.FirebasePushNotification
             }
         }
 
-
         public IPushNotificationHandler NotificationHandler { get; set; }
 
         public string[] SubscribedTopics
@@ -328,7 +271,6 @@ namespace Plugin.FirebasePushNotification
 
                 foreach (var t in currentTopics)
                 {
-
                     topics.Add(t);
                 }
 
@@ -351,9 +293,7 @@ namespace Plugin.FirebasePushNotification
                         _onNotificationOpened?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationResponseEventArgs(tmpParams.Data, tmpParams.Identifier, tmpParams.Type));
                         delayedNotificationResponse = null;
                     }
-
                 }
-
             }
             remove
             {
@@ -373,10 +313,9 @@ namespace Plugin.FirebasePushNotification
                     var tmpParams = delayedNotificationResponse;
                     if (!string.IsNullOrEmpty(tmpParams.Identifier))
                     {
-                        _onNotificationAction?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationResponseEventArgs(tmpParams.Data, tmpParams.Identifier, tmpParams.Type));
+                        _onNotificationAction?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationResponseEventArgs(tmpParams.Data, tmpParams.Identifier, tmpParams.Type, tmpParams.Result));
                         delayedNotificationResponse = null;
                     }
-
                 }
             }
             remove
@@ -424,7 +363,6 @@ namespace Plugin.FirebasePushNotification
             }
         }
 
-
         public void SendDeviceGroupMessage(IDictionary<string, string> parameters, string groupKey, string messageId, int timeOfLive)
         {
             var message = new RemoteMessage.Builder(groupKey);
@@ -440,7 +378,7 @@ namespace Plugin.FirebasePushNotification
         }
         public static void RegisterUserNotificationCategories(NotificationUserCategory[] notificationCategories)
         {
-            if (notificationCategories != null && notificationCategories.Length > 0)
+            if (notificationCategories?.Length > 0)
             {
                 ClearUserNotificationCategories();
 
@@ -448,7 +386,6 @@ namespace Plugin.FirebasePushNotification
                 {
                     userNotificationCategories.Add(userCat);
                 }
-
             }
             else
             {
@@ -465,12 +402,11 @@ namespace Plugin.FirebasePushNotification
 
         public void Subscribe(string topic)
         {
-
-            if (!currentTopics.Contains((topic)))
+            if (!currentTopics.Contains(topic))
             {
                 FirebaseMessaging.Instance.SubscribeToTopic(topic);
                 currentTopics.Add(topic);
-                var editor = Android.App.Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).Edit();
+                var editor = Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).Edit();
                 editor.PutStringSet(FirebaseTopicsKey, currentTopics);
                 editor.Commit();
             }
@@ -496,7 +432,7 @@ namespace Plugin.FirebasePushNotification
 
             currentTopics.Clear();
 
-            var editor = Android.App.Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).Edit();
+            var editor = Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).Edit();
             editor.PutStringSet(FirebaseTopicsKey, currentTopics);
             editor.Commit();
         }
@@ -508,11 +444,10 @@ namespace Plugin.FirebasePushNotification
                 FirebaseMessaging.Instance.UnsubscribeFromTopic(topic);
                 currentTopics.Remove(topic);
 
-                var editor = Android.App.Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).Edit();
+                var editor = Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).Edit();
                 editor.PutStringSet(FirebaseTopicsKey, currentTopics);
                 editor.Commit();
             }
-
         }
 
         #region internal methods
@@ -538,8 +473,8 @@ namespace Plugin.FirebasePushNotification
         }
         internal static void SaveToken(string token)
         {
-            var editor = Android.App.Application.Context.GetSharedPreferences(FirebasePushNotificationManager.KeyGroupName, FileCreationMode.Private).Edit();
-            editor.PutString(FirebasePushNotificationManager.FirebaseTokenKey, token);
+            var editor = Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).Edit();
+            editor.PutString(FirebaseTokenKey, token);
             editor.Commit();
         }
 
@@ -568,7 +503,6 @@ namespace Plugin.FirebasePushNotification
                 var manager = Application.Context.GetSystemService(Context.NotificationService) as NotificationManager;
                 manager.Cancel(tag, id);
             }
-
         }
     }
 }

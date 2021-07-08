@@ -5,7 +5,10 @@ namespace Plugin.FirebasePushNotification
     public class DefaultPushNotificationHandler : IPushNotificationHandler
     {
         public const string DomainTag = "DefaultPushNotificationHandler";
-
+        public void OnAction(NotificationResponse response)
+        {
+            System.Diagnostics.Debug.WriteLine($"{DomainTag} - OnAction");
+        }
         public virtual void OnError(string error)
         {
             System.Diagnostics.Debug.WriteLine($"{DomainTag} - OnError - {error}");

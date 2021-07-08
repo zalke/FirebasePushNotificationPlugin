@@ -22,7 +22,6 @@ namespace Plugin.FirebasePushNotification
         {
             Token = token;
         }
-
     }
 
     public delegate void FirebasePushNotificationErrorEventHandler(object source, FirebasePushNotificationErrorEventArgs e);
@@ -37,7 +36,6 @@ namespace Plugin.FirebasePushNotification
             Type = type;
             Message = message;
         }
-
     }
 
     public delegate void FirebasePushNotificationDataEventHandler(object source, FirebasePushNotificationDataEventArgs e);
@@ -50,9 +48,7 @@ namespace Plugin.FirebasePushNotification
         {
             Data = data;
         }
-
     }
-
 
     public delegate void FirebasePushNotificationResponseEventHandler(object source, FirebasePushNotificationResponseEventArgs e);
 
@@ -64,13 +60,15 @@ namespace Plugin.FirebasePushNotification
 
         public NotificationCategoryType Type { get; }
 
-        public FirebasePushNotificationResponseEventArgs(IDictionary<string, object> data, string identifier = "", NotificationCategoryType type = NotificationCategoryType.Default)
+        public string? Result { get; }
+
+        public FirebasePushNotificationResponseEventArgs(IDictionary<string, object> data, string identifier = "", NotificationCategoryType type = NotificationCategoryType.Default, string? result = null)
         {
             Identifier = identifier;
             Data = data;
             Type = type;
+            Result = result;
         }
-
     }
 
     /// <summary>
@@ -155,7 +153,6 @@ namespace Plugin.FirebasePushNotification
         /// </summary>
         void SendDeviceGroupMessage(IDictionary<string, string> parameters, string groupKey, string messageId, int timeOfLive);
 
-
         /// <summary>
         /// Clear all notifications
         /// </summary>
@@ -172,6 +169,5 @@ namespace Plugin.FirebasePushNotification
         void RemoveNotification(string tag, int id);
 
         Task<string> GetTokenAsync();
-
     }
 }

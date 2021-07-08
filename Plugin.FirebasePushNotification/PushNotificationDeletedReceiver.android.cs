@@ -11,7 +11,7 @@ namespace Plugin.FirebasePushNotification
             IDictionary<string, object> parameters = new Dictionary<string, object>();
             var extras = intent.Extras;
 
-            if (extras != null && !extras.IsEmpty)
+            if (extras?.IsEmpty == false)
             {
                 foreach (var key in extras.KeySet())
                 {

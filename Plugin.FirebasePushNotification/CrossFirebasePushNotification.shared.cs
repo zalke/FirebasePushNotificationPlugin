@@ -3,16 +3,16 @@
 namespace Plugin.FirebasePushNotification
 {
     /// <summary>
-    /// Cross platform FirebasePushNotification implemenations
+    /// Cross platform FirebasePushNotification implementations
     /// </summary>
     public static class CrossFirebasePushNotification
     {
-        private static Lazy<IFirebasePushNotification> implementation = new Lazy<IFirebasePushNotification>(() => CreateFirebasePushNotification(), System.Threading.LazyThreadSafetyMode.PublicationOnly);
+        private static readonly Lazy<IFirebasePushNotification> implementation = new Lazy<IFirebasePushNotification>(() => CreateFirebasePushNotification(), System.Threading.LazyThreadSafetyMode.PublicationOnly);
 
         /// <summary>
         /// Gets if the plugin is supported on the current platform.
         /// </summary>
-        public static bool IsSupported => implementation.Value == null ? false : true;
+        public static bool IsSupported => implementation.Value != null;
 
         /// <summary>
         /// Current settings to use
@@ -38,7 +38,6 @@ namespace Plugin.FirebasePushNotification
 
         private static IFirebasePushNotification CreateFirebasePushNotification()
         {
-
 #if NETSTANDARD1_0 || NETSTANDARD2_0
             return null;
 #else
