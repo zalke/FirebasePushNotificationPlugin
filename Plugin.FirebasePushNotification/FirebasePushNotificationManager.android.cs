@@ -195,7 +195,7 @@ namespace Plugin.FirebasePushNotification
             FirebaseMessaging.Instance.AutoInitEnabled = true;
             System.Threading.Tasks.Task.Run(async () =>
             {
-                var token = await GetTokenAsync();
+                var token = await GetTokenAsync().ConfigureAwait(false);
                 if (!string.IsNullOrEmpty(token))
                 {
                     SaveToken(token);
@@ -461,11 +461,11 @@ namespace Plugin.FirebasePushNotification
         {
             _onNotificationReceived?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationDataEventArgs(data));
         }
-        internal static void RegisterAction(IDictionary<string, object> data, string identifier = "", NotificationCategoryType type = NotificationCategoryType.Default)
+        internal static void RegisterAction(IDictionary<string, object> data, string identifier = "", NotificationCategoryType type = NotificationCategoryType.Default, string reply =null)
         {
-            var response = new NotificationResponse(data, data.ContainsKey(DefaultPushNotificationHandler.ActionIdentifierKey) ? $"{data[DefaultPushNotificationHandler.ActionIdentifierKey]}" : string.Empty);
+            var response = new NotificationResponse(data, data.ContainsKey(DefaultPushNotificationHandler.ActionIdentifierKey) ? $"{data[DefaultPushNotificationHandler.ActionIdentifierKey]}" : string.Empty, result: reply);
 
-            _onNotificationAction?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationResponseEventArgs(response.Data, response.Identifier, response.Type));
+            _onNotificationAction?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationResponseEventArgs(response.Data, response.Identifier, response.Type, reply));
         }
         internal static void RegisterDelete(IDictionary<string, object> data)
         {

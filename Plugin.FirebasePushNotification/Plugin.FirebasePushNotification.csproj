@@ -114,12 +114,13 @@
     <Compile Include="**\*.android.cs" />
     <Compile Include="**\*.android.*.cs" />
 
-    <PackageReference Include="Xamarin.Firebase.Messaging" Version="122.0.0" />
-    <PackageReference Include="Xamarin.Firebase.Iid" Version="121.1.0" />
-    <PackageReference Include="Xamarin.GooglePlayServices.Basement" Version="117.6.0.1" />
+    <PackageReference Include="Xamarin.Firebase.Messaging" Version="121.0.1" />
+    <PackageReference Include="Xamarin.Firebase.Iid" Version="121.0.1" />
+    <PackageReference Include="Xamarin.GooglePlayServices.Basement" Version="117.5.0" />
     <!-- fix nuget restore warnings and https://stackoverflow.com/questions/65381403/java-lang-noclassdeffounderror-when-implementing-firebase-cloud-messaging -->
     <PackageReference Include="Xamarin.Google.Android.DataTransport.TransportRuntime" Version="3.0.0" />
     <PackageReference Include="Xamarin.Google.Dagger" Version="2.37.0" />
+    <PackageReference Include="Xamarin.Google.Guava" ExcludeAssets="all" Version="27.1.0"/>
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('tizen')) ">

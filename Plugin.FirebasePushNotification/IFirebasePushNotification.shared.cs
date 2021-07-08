@@ -60,9 +60,9 @@ namespace Plugin.FirebasePushNotification
 
         public NotificationCategoryType Type { get; }
 
-        public string? Result { get; }
+        public string Result { get; }
 
-        public FirebasePushNotificationResponseEventArgs(IDictionary<string, object> data, string identifier = "", NotificationCategoryType type = NotificationCategoryType.Default, string? result = null)
+        public FirebasePushNotificationResponseEventArgs(IDictionary<string, object> data, string identifier = "", NotificationCategoryType type = NotificationCategoryType.Default, string result = null)
         {
             Identifier = identifier;
             Data = data;

@@ -115,7 +115,6 @@ namespace Plugin.FirebasePushNotification
             var refreshedToken = p0;
 
             //Resubscribe to topics since the old instance id isn't valid anymore
-            //CrossFirebasePushNotification.Current.SubscribedTopics.
             foreach (var t in CrossFirebasePushNotification.Current.SubscribedTopics)
             {
                 FirebaseMessaging.Instance.SubscribeToTopic(t);

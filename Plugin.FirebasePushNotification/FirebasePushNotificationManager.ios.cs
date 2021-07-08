@@ -427,7 +427,7 @@ namespace Plugin.FirebasePushNotification
         public void DidReceiveNotificationResponse(UNUserNotificationCenter center, UNNotificationResponse response, Action completionHandler)
         {
             var parameters = GetParameters(response.Notification.Request.Content.UserInfo);
-            string? result = null;
+            string result = null;
             var catType = NotificationCategoryType.Default;
             if (response.IsCustomAction)
             {

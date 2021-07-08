@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
 using Android.App;
 using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
 
 namespace Plugin.FirebasePushNotification
 {
@@ -29,7 +22,7 @@ namespace Plugin.FirebasePushNotification
                 }
             }
             var reply = RemoteInput.GetResultsFromIntent(intent)?.GetString("Result");
-            FirebasePushNotificationManager.RegisterAction(parameters, reply);
+            FirebasePushNotificationManager.RegisterAction(parameters, reply: reply);
 
             var manager = context.GetSystemService(Context.NotificationService) as NotificationManager;
             var notificationId = extras.GetInt(DefaultPushNotificationHandler.ActionNotificationIdKey, -1);
