@@ -40,5 +40,41 @@ namespace Plugin.FirebasePushNotification
                 }
             }
         }
+
+
+        public static Task<bool> ToAwaitableTaskVoid(this Android.Gms.Tasks.Task task)
+        {
+            var taskCompletionSource = new TaskCompletionSource<bool>();
+            var taskCompleteListener = new TaskCompleteListenerVoid(taskCompletionSource);
+            task.AddOnCompleteListener(taskCompleteListener);
+
+            return taskCompletionSource.Task;
+        }
+
+        private class TaskCompleteListenerVoid : Java.Lang.Object, IOnCompleteListener
+        {
+            private readonly TaskCompletionSource<bool> taskCompletionSource;
+
+            public TaskCompleteListenerVoid(TaskCompletionSource<bool> taskCompletionSource)
+            {
+                this.taskCompletionSource = taskCompletionSource;
+            }
+
+            public void OnComplete(Android.Gms.Tasks.Task task)
+            {
+                if (task.IsCanceled)
+                {
+                    taskCompletionSource.SetCanceled();
+                }
+                else if (task.IsSuccessful)
+                {
+                    taskCompletionSource.SetResult(true);
+                }
+                else
+                {
+                    taskCompletionSource.SetException(task.Exception);
+                }
+            }
+        }
     }
 }

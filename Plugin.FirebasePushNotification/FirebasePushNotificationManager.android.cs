@@ -190,24 +190,21 @@ namespace Plugin.FirebasePushNotification
                 _onNotificationError?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationErrorEventArgs(FirebasePushNotificationErrorType.UnregistrationFailed, ex.ToString()));
             }
         }
-        public void RegisterForPushNotifications()
+        public async void RegisterForPushNotifications()
         {
             FirebaseMessaging.Instance.AutoInitEnabled = true;
-            System.Threading.Tasks.Task.Run(async () =>
+            var token = await GetTokenAsync().ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(token))
             {
-                var token = await GetTokenAsync().ConfigureAwait(false);
-                if (!string.IsNullOrEmpty(token))
-                {
-                    SaveToken(token);
-                }
-            });
+                SaveToken(token);
+            }
         }
 
         public async Task<string> GetTokenAsync()
         {
             try
             {
-                return (await FirebaseMessaging.Instance.GetToken().ToAwaitableTask()).ToString();
+                return (await FirebaseMessaging.Instance.GetToken().ToAwaitableTask().ConfigureAwait(false)).ToString();
             }
             catch (Exception ex)
             {
@@ -223,15 +220,15 @@ namespace Plugin.FirebasePushNotification
             Reset();
         }
 
-        private static void CleanUp(bool clearAll = true)
+        private static async void CleanUp(bool clearAll = true)
         {
             if (clearAll)
             {
-                CrossFirebasePushNotification.Current.UnsubscribeAll();
+                await CrossFirebasePushNotification.Current.UnsubscribeAll().ConfigureAwait(false);
             }
 
-            //FirebaseInstanceId.Instance.DeleteInstanceId();
-            Firebase.Installations.FirebaseInstallations.Instance.Delete();
+            await FirebaseMessaging.Instance.DeleteToken().ToAwaitableTaskVoid().ConfigureAwait(false);
+            await Firebase.Installations.FirebaseInstallations.Instance.Delete().ToAwaitableTaskVoid().ConfigureAwait(false);
             SaveToken(string.Empty);
         }
 
@@ -392,19 +389,19 @@ namespace Plugin.FirebasePushNotification
                 ClearUserNotificationCategories();
             }
         }
-        public void Subscribe(string[] topics)
+        public async System.Threading.Tasks.Task Subscribe(string[] topics)
         {
             foreach (var t in topics)
             {
-                Subscribe(t);
+                await Subscribe(t).ConfigureAwait(false);
             }
         }
 
-        public void Subscribe(string topic)
+        public async System.Threading.Tasks.Task Subscribe(string topic)
         {
+            await FirebaseMessaging.Instance.SubscribeToTopic(topic).ToAwaitableTaskVoid().ConfigureAwait(false);
             if (!currentTopics.Contains(topic))
             {
-                FirebaseMessaging.Instance.SubscribeToTopic(topic);
                 currentTopics.Add(topic);
                 var editor = Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).Edit();
                 editor.PutStringSet(FirebaseTopicsKey, currentTopics);
@@ -412,21 +409,21 @@ namespace Plugin.FirebasePushNotification
             }
         }
 
-        public void Unsubscribe(string[] topics)
+        public async System.Threading.Tasks.Task Unsubscribe(string[] topics)
         {
             foreach (var t in topics)
             {
-                Unsubscribe(t);
+                await Unsubscribe(t).ConfigureAwait(false);
             }
         }
 
-        public void UnsubscribeAll()
+        public async System.Threading.Tasks.Task UnsubscribeAll()
         {
             foreach (var t in currentTopics)
             {
                 if (currentTopics.Contains(t))
                 {
-                    FirebaseMessaging.Instance.UnsubscribeFromTopic(t);
+                    await FirebaseMessaging.Instance.UnsubscribeFromTopic(t).ToAwaitableTaskVoid().ConfigureAwait(false);
                 }
             }
 
@@ -437,11 +434,11 @@ namespace Plugin.FirebasePushNotification
             editor.Commit();
         }
 
-        public void Unsubscribe(string topic)
+        public async System.Threading.Tasks.Task Unsubscribe(string topic)
         {
             if (currentTopics.Contains(topic))
             {
-                FirebaseMessaging.Instance.UnsubscribeFromTopic(topic);
+                await FirebaseMessaging.Instance.UnsubscribeFromTopic(topic).ToAwaitableTaskVoid().ConfigureAwait(false);
                 currentTopics.Remove(topic);
 
                 var editor = Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).Edit();
@@ -454,14 +451,17 @@ namespace Plugin.FirebasePushNotification
         //Raises event for push notification token refresh
         internal static void RegisterToken(string token)
         {
-            SaveToken(token);
-            _onTokenRefresh?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationTokenEventArgs(token));
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                SaveToken(token);
+                _onTokenRefresh?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationTokenEventArgs(token));
+            }
         }
         internal static void RegisterData(IDictionary<string, object> data)
         {
             _onNotificationReceived?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationDataEventArgs(data));
         }
-        internal static void RegisterAction(IDictionary<string, object> data, string identifier = "", NotificationCategoryType type = NotificationCategoryType.Default, string reply =null)
+        internal static void RegisterAction(IDictionary<string, object> data, string identifier = "", NotificationCategoryType type = NotificationCategoryType.Default, string reply = null)
         {
             var response = new NotificationResponse(data, data.ContainsKey(DefaultPushNotificationHandler.ActionIdentifierKey) ? $"{data[DefaultPushNotificationHandler.ActionIdentifierKey]}" : string.Empty, result: reply);
 

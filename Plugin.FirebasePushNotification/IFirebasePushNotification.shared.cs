@@ -87,23 +87,23 @@ namespace Plugin.FirebasePushNotification
         /// <summary>
         /// Subscribe to multiple topics
         /// </summary>
-        void Subscribe(string[] topics);
+        Task Subscribe(string[] topics);
         /// <summary>
         /// Subscribe to one topic
         /// </summary>
-        void Subscribe(string topic);
+        Task Subscribe(string topic);
         /// <summary>
         /// Unsubscribe to one topic
         /// </summary>
-        void Unsubscribe(string topic);
+        Task Unsubscribe(string topic);
         /// <summary>
         /// Unsubscribe to multiple topics
         /// </summary>
-        void Unsubscribe(string[] topics);
+        Task Unsubscribe(string[] topics);
         /// <summary>
         /// Unsubscribe all topics
         /// </summary>
-        void UnsubscribeAll();
+        Task UnsubscribeAll();
 
         /// <summary>
         /// Register push notifications on demand

@@ -109,18 +109,31 @@ namespace Plugin.FirebasePushNotification
             CrossFirebasePushNotification.Current.NotificationHandler?.OnReceived(parameters);
         }
 
-        public override void OnNewToken(string p0)
+        public override async void OnNewToken(string refreshedToken)
         {
-            // Get updated InstanceID token.
-            var refreshedToken = p0;
+            if (string.IsNullOrWhiteSpace(refreshedToken))
+            {
+                System.Diagnostics.Debug.WriteLine("Received empty Token...");
+                return;
+            }
+
+            System.Diagnostics.Debug.WriteLine($"Received new token: {refreshedToken}, Starting Re registering existing topics");
 
             //Resubscribe to topics since the old instance id isn't valid anymore
             foreach (var t in CrossFirebasePushNotification.Current.SubscribedTopics)
             {
-                FirebaseMessaging.Instance.SubscribeToTopic(t);
+                try
+                {
+                    await FirebaseMessaging.Instance.SubscribeToTopic(t).ToAwaitableTaskVoid().ConfigureAwait(false);
+                    System.Diagnostics.Debug.WriteLine($"ReRegistered Topic: {t}");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error ReRegistering Topic: {t}, {ex.Message}");
+                }
             }
 
-            var editor = Android.App.Application.Context.GetSharedPreferences(FirebasePushNotificationManager.KeyGroupName, FileCreationMode.Private).Edit();
+            var editor = Application.Context.GetSharedPreferences(FirebasePushNotificationManager.KeyGroupName, FileCreationMode.Private).Edit();
             editor.PutString(FirebasePushNotificationManager.FirebaseTokenKey, refreshedToken);
             editor.Commit();
 

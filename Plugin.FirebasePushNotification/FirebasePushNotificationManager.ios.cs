@@ -347,15 +347,15 @@ namespace Plugin.FirebasePushNotification
             return parameters;
         }
 
-        public void Subscribe(string[] topics)
+        public async Task Subscribe(string[] topics)
         {
             foreach (var t in topics)
             {
-                Subscribe(t);
+                await Subscribe(t).ConfigureAwait(false);
             }
         }
 
-        public void Subscribe(string topic)
+        public async Task Subscribe(string topic)
         {
             if (string.IsNullOrWhiteSpace(topic))
             {
@@ -370,7 +370,7 @@ namespace Plugin.FirebasePushNotification
 
             if (!currentTopics.Contains(new NSString(topic)))
             {
-                Messaging.SharedInstance.Subscribe($"{topic}");
+                await Messaging.SharedInstance.SubscribeAsync($"{topic}").ConfigureAwait(false);
                 currentTopics.Add(new NSString(topic));
             }
 
@@ -378,23 +378,23 @@ namespace Plugin.FirebasePushNotification
             NSUserDefaults.StandardUserDefaults.Synchronize();
         }
 
-        public void UnsubscribeAll()
+        public async Task UnsubscribeAll()
         {
             for (nuint i = 0; i < currentTopics.Count; i++)
             {
-                Unsubscribe(currentTopics.GetItem<NSString>(i));
+                await Unsubscribe(currentTopics.GetItem<NSString>(i)).ConfigureAwait(false);
             }
         }
 
-        public void Unsubscribe(string[] topics)
+        public async Task Unsubscribe(string[] topics)
         {
             foreach (var t in topics)
             {
-                Unsubscribe(t);
+                await Unsubscribe(t).ConfigureAwait(false);
             }
         }
 
-        public void Unsubscribe(string topic)
+        public async Task Unsubscribe(string topic)
         {
             if (string.IsNullOrWhiteSpace(topic))
             {
@@ -409,7 +409,7 @@ namespace Plugin.FirebasePushNotification
             var deletedKey = new NSString($"{topic}");
             if (currentTopics.Contains(deletedKey))
             {
-                Messaging.SharedInstance.Unsubscribe($"{topic}");
+                await Messaging.SharedInstance.UnsubscribeAsync($"{topic}");
                 var idx = (nint)currentTopics.IndexOf(deletedKey);
                 if (idx != -1)
                 {
@@ -473,7 +473,7 @@ namespace Plugin.FirebasePushNotification
         [Export("messaging:didReceiveRegistrationToken:")]
         public void DidReceiveRegistrationToken(Messaging messaging, string fcmToken)
         {
-            // Note that this callback will be fired everytime a new token is generated, including the first
+            // Note that this callback will be fired every time a new token is generated, including the first
             // time. So if you need to retrieve the token as soon as it is available this is where that
             // should be done.
             var refreshedToken = fcmToken;
