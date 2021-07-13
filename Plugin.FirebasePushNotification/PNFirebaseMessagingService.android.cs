@@ -124,7 +124,7 @@ namespace Plugin.FirebasePushNotification
             {
                 try
                 {
-                    await FirebaseMessaging.Instance.SubscribeToTopic(t).ToAwaitableTaskVoid().ConfigureAwait(false);
+                    await FirebaseMessaging.Instance.SubscribeToTopic(t).ToAwaitableTask().ConfigureAwait(false);
                     System.Diagnostics.Debug.WriteLine($"ReRegistered Topic: {t}");
                 }
                 catch (Exception ex)
@@ -137,21 +137,8 @@ namespace Plugin.FirebasePushNotification
             editor.PutString(FirebasePushNotificationManager.FirebaseTokenKey, refreshedToken);
             editor.Commit();
 
-            // CrossFirebasePushNotification.Current.OnTokenRefresh?.Invoke(this,refreshedToken);
             FirebasePushNotificationManager.RegisterToken(refreshedToken);
             System.Diagnostics.Debug.WriteLine($"REFRESHED TOKEN: {refreshedToken}");
-        }
-
-        private void ScheduleJob()
-        {
-            // [START dispatch_job]
-            /*FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(new GooglePlayDriver(this));
-            Job myJob = dispatcher.newJobBuilder()
-                    .setService(MyJobService.class)
-                .setTag("my-job-tag")
-                .build();
-        dispatcher.schedule(myJob);*/
-            // [END dispatch_job]
         }
     }
 }

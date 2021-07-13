@@ -132,6 +132,11 @@ namespace Plugin.FirebasePushNotification
         /// </summary>
         public const string ShowWhenKey = "show_when";
 
+        /// <summary>
+        /// Group Key
+        /// </summary>
+        public const string GroupKey = "group";
+
         public virtual void OnOpened(NotificationResponse response)
         {
             System.Diagnostics.Debug.WriteLine($"{DomainTag} - OnOpened");
@@ -146,7 +151,20 @@ namespace Plugin.FirebasePushNotification
         {
             System.Diagnostics.Debug.WriteLine($"{DomainTag} - OnReceived");
 
-            if ((parameters.TryGetValue(SilentKey, out var silent) && (silent.ToString() == "true" || silent.ToString() == "1")) || (IsInForeground() && (!(!parameters.ContainsKey(ChannelIdKey) && parameters.TryGetValue(PriorityKey, out var imp) && ($"{imp}" == "high" || $"{imp}" == "max")) || (!parameters.ContainsKey(PriorityKey) && !parameters.ContainsKey(ChannelIdKey) && FirebasePushNotificationManager.DefaultNotificationChannelImportance != NotificationImportance.High && FirebasePushNotificationManager.DefaultNotificationChannelImportance != NotificationImportance.Max))))
+            //if no title and No body just exit
+            if (!parameters.TryGetValue(BodyKey, out var _) && !parameters.TryGetValue(TitleKey, out var _))
+            {
+                return;
+            }
+
+            var MarkedSilent = (parameters.TryGetValue(SilentKey, out var silent) && (silent.ToString() == "true" || silent.ToString() == "1"));
+            var NoPriorityAndNoCahnnelAndDefaultBelowHigh = !parameters.ContainsKey(PriorityKey) && !parameters.ContainsKey(ChannelIdKey) &&
+                !new[] { NotificationImportance.High, NotificationImportance.Max }.Contains(FirebasePushNotificationManager.DefaultNotificationChannelImportance);
+            var NoChannelPriorityBelowHigh = !parameters.ContainsKey(ChannelIdKey) &&
+                parameters.TryGetValue(PriorityKey, out var imp) &&
+                !new[] { "high", "max" }.Contains($"{imp}");
+
+            if (MarkedSilent || (IsInForeground() && (NoChannelPriorityBelowHigh || NoPriorityAndNoCahnnelAndDefaultBelowHigh)))
             {
                 return;
             }
@@ -216,6 +234,11 @@ namespace Plugin.FirebasePushNotification
                     // Keep the default value of zero for the notify_id, but log the conversion problem.
                     System.Diagnostics.Debug.WriteLine($"Failed to convert {id} to an integer {ex}");
                 }
+            }
+
+            if (notifyId == 0)
+            {
+                notifyId = new Java.Util.Random().NextInt();
             }
 
             if (parameters.TryGetValue(ShowWhenKey, out var shouldShowWhen))
@@ -528,6 +551,20 @@ namespace Plugin.FirebasePushNotification
                 }
             }
 
+            if (parameters.TryGetValue(GroupKey, out var groupContent))
+            {
+                var group = groupContent.ToString();
+                notificationBuilder.SetGroup(group);
+            }
+
+            if (parameters.TryGetValue("additional_lines", out var additionalLinesContent))
+            {
+                var style = new NotificationCompat.InboxStyle();
+                style.AddLine(message);
+                style.AddLine(additionalLinesContent.ToString());
+                notificationBuilder.SetStyle(style);
+            }
+
             OnBuildNotification(notificationBuilder, parameters);
 
             var notificationManager = (NotificationManager)context.GetSystemService(Context.NotificationService);
@@ -597,8 +634,8 @@ namespace Plugin.FirebasePushNotification
         private static bool IsInForeground()
         {
             var myProcess = new RunningAppProcessInfo();
-            ActivityManager.GetMyMemoryState(myProcess);
-            return myProcess.Importance == Android.App.Importance.Foreground;
+            GetMyMemoryState(myProcess);
+            return myProcess.Importance == Importance.Foreground;
         }
     }
 }

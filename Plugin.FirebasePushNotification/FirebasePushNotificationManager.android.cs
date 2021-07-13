@@ -21,9 +21,9 @@ namespace Plugin.FirebasePushNotification
     public class FirebasePushNotificationManager : Java.Lang.Object, IFirebasePushNotification
     {
         private static NotificationResponse delayedNotificationResponse = null;
-        internal const string KeyGroupName = "Plugin.FirebasePushNotification";
+        public const string KeyGroupName = "Plugin.FirebasePushNotification";
         internal const string FirebaseTopicsKey = "FirebaseTopicsKey";
-        internal const string FirebaseTokenKey = "FirebaseTokenKey";
+        public const string FirebaseTokenKey = "FirebaseTokenKey";
         internal const string AppVersionCodeKey = "AppVersionCodeKey";
         internal const string AppVersionNameKey = "AppVersionNameKey";
         internal const string AppVersionPackageNameKey = "AppVersionPackageNameKey";
@@ -227,8 +227,8 @@ namespace Plugin.FirebasePushNotification
                 await CrossFirebasePushNotification.Current.UnsubscribeAll().ConfigureAwait(false);
             }
 
-            await FirebaseMessaging.Instance.DeleteToken().ToAwaitableTaskVoid().ConfigureAwait(false);
-            await Firebase.Installations.FirebaseInstallations.Instance.Delete().ToAwaitableTaskVoid().ConfigureAwait(false);
+            await FirebaseMessaging.Instance.DeleteToken().ToAwaitableTask().ConfigureAwait(false);
+            await Firebase.Installations.FirebaseInstallations.Instance.Delete().ToAwaitableTask().ConfigureAwait(false);
             SaveToken(string.Empty);
         }
 
@@ -397,9 +397,8 @@ namespace Plugin.FirebasePushNotification
             }
         }
 
-        public async System.Threading.Tasks.Task Subscribe(string topic)
+        public System.Threading.Tasks.Task Subscribe(string topic)
         {
-            await FirebaseMessaging.Instance.SubscribeToTopic(topic).ToAwaitableTaskVoid().ConfigureAwait(false);
             if (!currentTopics.Contains(topic))
             {
                 currentTopics.Add(topic);
@@ -407,6 +406,7 @@ namespace Plugin.FirebasePushNotification
                 editor.PutStringSet(FirebaseTopicsKey, currentTopics);
                 editor.Commit();
             }
+            return FirebaseMessaging.Instance.SubscribeToTopic(topic).ToAwaitableTask();
         }
 
         public async System.Threading.Tasks.Task Unsubscribe(string[] topics)
@@ -423,7 +423,7 @@ namespace Plugin.FirebasePushNotification
             {
                 if (currentTopics.Contains(t))
                 {
-                    await FirebaseMessaging.Instance.UnsubscribeFromTopic(t).ToAwaitableTaskVoid().ConfigureAwait(false);
+                    await FirebaseMessaging.Instance.UnsubscribeFromTopic(t).ToAwaitableTask().ConfigureAwait(false);
                 }
             }
 
@@ -434,22 +434,22 @@ namespace Plugin.FirebasePushNotification
             editor.Commit();
         }
 
-        public async System.Threading.Tasks.Task Unsubscribe(string topic)
+        public System.Threading.Tasks.Task Unsubscribe(string topic)
         {
             if (currentTopics.Contains(topic))
             {
-                await FirebaseMessaging.Instance.UnsubscribeFromTopic(topic).ToAwaitableTaskVoid().ConfigureAwait(false);
                 currentTopics.Remove(topic);
 
                 var editor = Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private).Edit();
                 editor.PutStringSet(FirebaseTopicsKey, currentTopics);
                 editor.Commit();
             }
+            return FirebaseMessaging.Instance.UnsubscribeFromTopic(topic).ToAwaitableTask();
         }
 
         #region internal methods
         //Raises event for push notification token refresh
-        internal static void RegisterToken(string token)
+        public static void RegisterToken(string token)
         {
             if (!string.IsNullOrWhiteSpace(token))
             {
@@ -457,7 +457,7 @@ namespace Plugin.FirebasePushNotification
                 _onTokenRefresh?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationTokenEventArgs(token));
             }
         }
-        internal static void RegisterData(IDictionary<string, object> data)
+        public static void RegisterData(IDictionary<string, object> data)
         {
             _onNotificationReceived?.Invoke(CrossFirebasePushNotification.Current, new FirebasePushNotificationDataEventArgs(data));
         }
