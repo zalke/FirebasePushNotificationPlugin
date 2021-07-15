@@ -238,12 +238,9 @@ namespace Plugin.FirebasePushNotification
                 }
             }
 
-            if (notifyId == 0)
+            while (notifyId == 0 || notifyId == GroupSummaryId)
             {
-                while (notifyId != GroupSummaryId)
-                {
-                    notifyId = new Java.Util.Random().NextInt();
-                }
+                notifyId = new Java.Util.Random().NextInt();
             }
 
             if (parameters.TryGetValue(ShowWhenKey, out var shouldShowWhen))
