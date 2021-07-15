@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Android.App;
 using Android.Content;
 using Firebase.Messaging;
@@ -108,37 +109,38 @@ namespace Plugin.FirebasePushNotification
             FirebasePushNotificationManager.RegisterData(parameters);
             CrossFirebasePushNotification.Current.NotificationHandler?.OnReceived(parameters);
         }
-
-        public override async void OnNewToken(string refreshedToken)
+        
+        public override void OnNewToken(string p0)
         {
-            if (string.IsNullOrWhiteSpace(refreshedToken))
+            if (string.IsNullOrWhiteSpace(p0))
             {
                 System.Diagnostics.Debug.WriteLine("Received empty Token...");
                 return;
             }
 
-            System.Diagnostics.Debug.WriteLine($"Received new token: {refreshedToken}, Starting Re registering existing topics");
+            var editor = Application.Context.GetSharedPreferences(FirebasePushNotificationManager.KeyGroupName, FileCreationMode.Private).Edit();
+            editor.PutString(FirebasePushNotificationManager.FirebaseTokenKey, p0);
+            editor.Commit();
+
+            FirebasePushNotificationManager.RegisterToken(p0);
+            System.Diagnostics.Debug.WriteLine($"Received new token: {p0}, Starting Re registering existing topics");
 
             //Resubscribe to topics since the old instance id isn't valid anymore
             foreach (var t in CrossFirebasePushNotification.Current.SubscribedTopics)
             {
-                try
+                Task.Run(async () =>
                 {
-                    await FirebaseMessaging.Instance.SubscribeToTopic(t).ToAwaitableTask().ConfigureAwait(false);
-                    System.Diagnostics.Debug.WriteLine($"ReRegistered Topic: {t}");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error ReRegistering Topic: {t}, {ex.Message}");
-                }
+                    try
+                    {
+                        await FirebaseMessaging.Instance.SubscribeToTopic(t).ToAwaitableTask().ConfigureAwait(false);
+                        System.Diagnostics.Debug.WriteLine($"ReRegistered Topic: {t}");
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error ReRegistering Topic: {t}, {ex.Message}");
+                    }
+                });
             }
-
-            var editor = Application.Context.GetSharedPreferences(FirebasePushNotificationManager.KeyGroupName, FileCreationMode.Private).Edit();
-            editor.PutString(FirebasePushNotificationManager.FirebaseTokenKey, refreshedToken);
-            editor.Commit();
-
-            FirebasePushNotificationManager.RegisterToken(refreshedToken);
-            System.Diagnostics.Debug.WriteLine($"REFRESHED TOKEN: {refreshedToken}");
         }
     }
 }

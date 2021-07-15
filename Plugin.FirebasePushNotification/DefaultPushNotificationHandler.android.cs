@@ -137,6 +137,8 @@ namespace Plugin.FirebasePushNotification
         /// </summary>
         public const string GroupKey = "group";
 
+        public const int GroupSummaryId = 248;
+
         public virtual void OnOpened(NotificationResponse response)
         {
             System.Diagnostics.Debug.WriteLine($"{DomainTag} - OnOpened");
@@ -238,7 +240,10 @@ namespace Plugin.FirebasePushNotification
 
             if (notifyId == 0)
             {
-                notifyId = new Java.Util.Random().NextInt();
+                while (notifyId != GroupSummaryId)
+                {
+                    notifyId = new Java.Util.Random().NextInt();
+                }
             }
 
             if (parameters.TryGetValue(ShowWhenKey, out var shouldShowWhen))
@@ -551,9 +556,10 @@ namespace Plugin.FirebasePushNotification
                 }
             }
 
+            string group = string.Empty;
             if (parameters.TryGetValue(GroupKey, out var groupContent))
             {
-                var group = groupContent.ToString();
+                group = groupContent.ToString();
                 notificationBuilder.SetGroup(group);
             }
 
@@ -569,6 +575,18 @@ namespace Plugin.FirebasePushNotification
 
             var notificationManager = (NotificationManager)context.GetSystemService(Context.NotificationService);
             notificationManager.Notify(tag, notifyId, notificationBuilder.Build());
+
+            //Summary notification
+            if (!string.IsNullOrWhiteSpace(group))
+            {
+                var notificationSummaryBuilder = new NotificationCompat.Builder(context, chanId)
+                    .SetSmallIcon(smallIconResource)
+                    .SetStyle(new NotificationCompat.InboxStyle())
+                    .SetGroup(group)
+                    .SetGroupSummary(true)
+                    .SetShowWhen(true);
+                notificationManager.Notify(GroupSummaryId, notificationSummaryBuilder.Build());
+            }
         }
 
         /// <summary>
