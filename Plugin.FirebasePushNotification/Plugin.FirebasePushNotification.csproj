@@ -2,7 +2,7 @@
 
   <PropertyGroup>
 
-    <TargetFrameworks>netstandard2.0;xamarin.ios10;monoandroid9.0;monoandroid10.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;xamarin.ios10;monoandroid9.0;monoandroid10.0;</TargetFrameworks>
     <!--<TargetFrameworks>netstandard2.0;xamarin.ios10;xamarin.mac20;xamarin.tvos10;xamarin.watchos10;monoandroid10.0;tizen40;netcoreapp3.1;net472</TargetFrameworks>
     <TargetFrameworks Condition=" '$(OS)' == 'Windows_NT' ">uap10.0.17763;$(TargetFrameworks)</TargetFrameworks>-->
 
@@ -114,13 +114,13 @@
     <Compile Include="**\*.android.cs" />
     <Compile Include="**\*.android.*.cs" />
 
-    <PackageReference Include="Xamarin.Firebase.Messaging" Version="121.0.1" />
-    <PackageReference Include="Xamarin.Firebase.Iid" Version="121.0.1" />
-    <PackageReference Include="Xamarin.GooglePlayServices.Basement" Version="117.5.0" />
+    <PackageReference Include="Xamarin.Firebase.Messaging" Version="121.1.0" />
+    <PackageReference Include="Xamarin.Firebase.Iid" Version="121.1.0" />
+    <PackageReference Include="Xamarin.GooglePlayServices.Basement" Version="117.6.0" />
     <!-- fix nuget restore warnings and https://stackoverflow.com/questions/65381403/java-lang-noclassdeffounderror-when-implementing-firebase-cloud-messaging -->
     <PackageReference Include="Xamarin.Google.Android.DataTransport.TransportRuntime" Version="3.0.0" />
-    <PackageReference Include="Xamarin.Google.Dagger" Version="2.37.0" />
-    <PackageReference Include="Xamarin.Google.Guava" ExcludeAssets="all" Version="27.1.0"/>
+    <PackageReference Include="Xamarin.Google.Dagger" Version="2.27.0" />
+    <PackageReference Include="Xamarin.Google.Guava" ExcludeAssets="all" Version="28.2.0"/>
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('tizen')) ">
