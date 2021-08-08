@@ -30,9 +30,9 @@ namespace Plugin.FirebasePushNotification
             }
         }
 
-#if ANDROID
+#if __ANDROID__ || ANDROID
         public static FirebasePushNotificationManager Android => (FirebasePushNotificationManager)Current;
-#elif IOS
+#elif __IOS__ || IOS
         public static FirebasePushNotificationManager IOS => (FirebasePushNotificationManager)Current;
 #endif
 
