@@ -413,7 +413,7 @@ namespace Plugin.FirebasePushNotification
             var pendingDeleteIntent = PendingIntent.GetBroadcast(context, requestCode, deleteIntent, PendingIntentFlags.CancelCurrent);
             notificationBuilder.SetDeleteIntent(pendingDeleteIntent);
 
-            if (Build.VERSION.SdkInt < Android.OS.BuildVersionCodes.O)
+            if (Build.VERSION.SdkInt < BuildVersionCodes.O)
             {
                 if (parameters.TryGetValue(PriorityKey, out var priority) && priority != null)
                 {
@@ -581,6 +581,7 @@ namespace Plugin.FirebasePushNotification
                     .SetStyle(new NotificationCompat.InboxStyle())
                     .SetGroup(group)
                     .SetGroupSummary(true)
+                    .SetAutoCancel(true)
                     .SetShowWhen(true);
                 notificationManager.Notify(GroupSummaryId, notificationSummaryBuilder.Build());
             }
