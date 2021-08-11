@@ -119,9 +119,10 @@ namespace Plugin.FirebasePushNotification
             {
                 ThreadPool.QueueUserWorkItem(_ =>
                 {
-                    var packageName = Application.Context.PackageManager.GetPackageInfo(Application.Context.PackageName, PackageInfoFlags.MetaData).PackageName;
-                    var versionCode = Application.Context.PackageManager.GetPackageInfo(Application.Context.PackageName, PackageInfoFlags.MetaData).LongVersionCode;
-                    var versionName = Application.Context.PackageManager.GetPackageInfo(Application.Context.PackageName, PackageInfoFlags.MetaData).VersionName;
+                    var packageInfo = Application.Context.PackageManager.GetPackageInfo(Application.Context.PackageName, PackageInfoFlags.MetaData);
+                    var packageName = packageInfo.PackageName;
+                    var versionCode = Build.VERSION.SdkInt >= BuildVersionCodes.P? packageInfo.LongVersionCode: packageInfo.VersionCode;
+                    var versionName = packageInfo.VersionName;
                     var prefs = Application.Context.GetSharedPreferences(KeyGroupName, FileCreationMode.Private);
 
                     try
