@@ -23,8 +23,9 @@
 
   <PropertyGroup>
     <NoWarn>1701;1702;1591</NoWarn>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Plugin.PushNotification.xml</DocumentationFile>
+    <DocumentationFile></DocumentationFile>
     <Company>Rendy Del Rosario, Sameer Khandekar, Px7-941</Company>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -121,7 +122,7 @@
     <!-- fix nuget restore warnings and https://stackoverflow.com/questions/65381403/java-lang-noclassdeffounderror-when-implementing-firebase-cloud-messaging -->
     <PackageReference Include="Xamarin.Google.Android.DataTransport.TransportRuntime" Version="3.0.0" />
     <PackageReference Include="Xamarin.Google.Dagger" Version="2.27.0" />
-    <PackageReference Include="Xamarin.Google.Guava" ExcludeAssets="all" Version="28.2.0"/>
+    <PackageReference Include="Xamarin.Google.Guava" ExcludeAssets="all" Version="28.2.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('tizen')) ">
@@ -129,6 +130,13 @@
     <None Remove="Platforms\Xamarin\**\*.cs" />
     <Compile Include="Platforms\Tizen\**\*.cs" />
     <Compile Include="Platforms\Xamarin\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Roslynator.Analyzers" Version="3.2.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
