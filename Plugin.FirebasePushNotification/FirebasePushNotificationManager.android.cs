@@ -228,8 +228,15 @@ namespace Plugin.FirebasePushNotification
                 await CrossFirebasePushNotification.Current.UnsubscribeAll().ConfigureAwait(false);
             }
 
-            await FirebaseMessaging.Instance.DeleteToken().ToAwaitableTask().ConfigureAwait(false);
-            await Firebase.Installations.FirebaseInstallations.Instance.Delete().ToAwaitableTask().ConfigureAwait(false);
+            try
+            {
+                await FirebaseMessaging.Instance.DeleteToken().ToAwaitableTask().ConfigureAwait(false);
+                await Firebase.Installations.FirebaseInstallations.Instance.Delete().ToAwaitableTask().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Android.Util.Log.Warn("", ex.Message);
+            }
             SaveToken(string.Empty);
         }
 
